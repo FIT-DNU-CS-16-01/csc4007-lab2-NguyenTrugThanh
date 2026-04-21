@@ -17,7 +17,7 @@ from src.error_analysis import build_error_analysis, save_error_analysis
 from src.evaluate import compute_metrics, save_confusion_matrix, save_metrics
 from src.load_data import load_dataset_any
 from src.modeling import build_pipeline
-from src.preprocess import basic_clean_text
+from src.preprocess import basic_clean_text, gentle_clean_text, aggressive_clean_text
 from src.split import make_splits
 from src.utils import set_seed
 
@@ -30,6 +30,7 @@ def main() -> None:
     ap.add_argument("--label_col", default="label")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--max_rows", type=int, default=None)
+    ap.add_argument("--preprocess", default="basic", choices=["raw", "gentle", "basic", "aggressive"])
     ap.add_argument("--vectorizer", default="tfidf", choices=["bow", "tfidf"])
     ap.add_argument("--model", default="logreg", choices=["logreg", "linearsvm"])
     ap.add_argument("--max_features", type=int, default=20000)
@@ -61,17 +62,27 @@ def main() -> None:
     ]
     render_audit_md(out_dir / "logs" / "audit_before.md", "Audit BEFORE preprocessing", sec_before)
 
+    # Áp dụng chiến lược tiền xử lý được chọn
     df_clean = df.copy()
-    df_clean["text"] = df_clean["text"].map(
-        lambda x: basic_clean_text(
-            x,
-            lowercase=True,
-            replace_url=True,
-            replace_email=True,
-            replace_number=args.replace_number,
-            keep_punct=not args.drop_punct,
+    
+    if args.preprocess == "raw":
+        # Không làm gì cả, giữ text nguyên bản
+        pass
+    elif args.preprocess == "gentle":
+        df_clean["text"] = df_clean["text"].map(gentle_clean_text)
+    elif args.preprocess == "aggressive":
+        df_clean["text"] = df_clean["text"].map(aggressive_clean_text)
+    else:  # basic (default)
+        df_clean["text"] = df_clean["text"].map(
+            lambda x: basic_clean_text(
+                x,
+                lowercase=True,
+                replace_url=True,
+                replace_email=True,
+                replace_number=args.replace_number,
+                keep_punct=not args.drop_punct,
+            )
         )
-    )
 
     sec_after = [
         ("Schema / Missingness", audit_schema_missingness(df_clean)),
@@ -110,6 +121,7 @@ def main() -> None:
         "dataset": args.dataset,
         "dataset_path": args.data_path if args.dataset == "local_csv" else None,
         "seed": args.seed,
+        "preprocess": args.preprocess,
         "vectorizer": args.vectorizer,
         "model": args.model,
         "max_features": args.max_features,
@@ -137,6 +149,7 @@ def main() -> None:
     summary = {
         "dataset": args.dataset,
         "seed": args.seed,
+        "preprocess": args.preprocess,
         "vectorizer": args.vectorizer,
         "model": args.model,
         "max_features": args.max_features,
