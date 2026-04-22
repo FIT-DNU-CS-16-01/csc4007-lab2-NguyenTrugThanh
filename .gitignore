@@ -3,6 +3,6 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 *.pyc
-outputs/
+# outputs/
 .hf_cache/
 *.joblib

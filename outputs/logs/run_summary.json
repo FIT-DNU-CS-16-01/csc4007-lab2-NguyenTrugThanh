@@ -1,0 +1,13 @@
+{
+  "dataset": "imdb",
+  "seed": 42,
+  "preprocess": "aggressive",
+  "vectorizer": "tfidf",
+  "model": "logreg",
+  "max_features": 20000,
+  "ngram_max": 1,
+  "replace_number": false,
+  "drop_punct": false,
+  "metrics_test_macro_f1": 0.8997830633377041,
+  "metrics_test_accuracy": 0.8998
+}
